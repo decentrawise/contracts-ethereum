@@ -1,0 +1,22 @@
+Prototype Stage 1:
+
+1. Build smart contracts to satisfy user stories described in prototype document:
+
+User A - stories
+* I want to have an artist profile that links me to my audio files
+* I want to be able to upload my audio samples from WAV format
+* I want my Audio sample to have a title and a unique code
+* I want to see my audio file in the browser
+* I want to be able to upload a completed track and a selection of ‘stems’ (the part that make up the track) 
+
+User B - stories
+* I want to browse for new sounds that I can use to make music
+* I want to ‘create a new project’ and save sounds to a shortlist 
+* I want to download the sounds i have saved 
+* I want to upload a finished track to my ‘project’ using the stems from User A, along with WAVs of my own
+* I will be assigned a unique ID for my new track
+* I want to system to know which stems i used 
+
+ 2. Test contracts
+3. Deploy
+4. Integrate to frontend part - Web3
