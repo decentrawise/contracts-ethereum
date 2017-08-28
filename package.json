@@ -4,6 +4,7 @@
   "description": "Emanate, platformfor music exchange on blockchain",
   "author": "Sulejman Sarajlija <sulejmansarajlija@gmail.com>",
   "dependencies": {
+    "ipfs-api": "^14.1.2",
     "zeppelin-solidity": "^1.2.0"
   }
 }
