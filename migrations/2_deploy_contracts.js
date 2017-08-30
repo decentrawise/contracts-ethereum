@@ -1,5 +1,5 @@
 var MN8 = artifacts.require("./MN8.sol");
-var Aut = artifacts.require("./Auth.sol");
+var Auth = artifacts.require("./Auth.sol");
 var Stem = artifacts.require("./Stem.sol");
 var Artist = artifacts.require("./Artist.sol");
 
