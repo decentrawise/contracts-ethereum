@@ -14,7 +14,7 @@ import '../ownership/Ownable.sol';
  */
 
 contract MintableToken is StandardToken, Ownable {
-  event MintingAgentChanged(address addr, bool state);
+  event MintingAgentChanged(address indexed addr, bool state);
   event Mint(address indexed to, uint256 amount);
   event MintFinished();
 
