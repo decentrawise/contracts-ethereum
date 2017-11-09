@@ -14,15 +14,33 @@ import '../ownership/Ownable.sol';
  */
 
 contract MintableToken is StandardToken, Ownable {
+  event MintingAgentChanged(address addr, bool state);
   event Mint(address indexed to, uint256 amount);
   event MintFinished();
+
+  /** List of agents that are allowed to create new tokens */
+  mapping (address => bool) public mintAgents;
 
   bool public mintingFinished = false;
 
 
+  modifier onlyMintAgent() {
+    // Only crowdsale contracts are allowed to mint new tokens
+    require(mintAgents[msg.sender]);
+    _;
+  }
+
   modifier canMint() {
     require(!mintingFinished);
     _;
+  }
+
+  /**
+   * Owner can allow crowdsale contracts to mint new tokens.
+   */
+  function setMintAgent(address _addr, bool _state) onlyOwner canMint {
+    mintAgents[_addr] = _state;
+    MintingAgentChanged(_addr, _state);
   }
 
   /**
@@ -31,7 +49,7 @@ contract MintableToken is StandardToken, Ownable {
    * @param _amount The amount of tokens to mint.
    * @return A boolean that indicates if the operation was successful.
    */
-  function mint(address _to, uint256 _amount) onlyOwner canMint returns (bool) {
+  function mint(address _to, uint256 _amount) onlyMintAgent canMint returns (bool) {
     totalSupply = totalSupply.add(_amount);
     balances[_to] = balances[_to].add(_amount);
     Mint(_to, _amount);
