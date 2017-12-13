@@ -36,6 +36,8 @@ contract MintableToken is UpgradeableToken, Ownable {
     _;
   }
 
+  function MintableToken() UpgradeableToken(msg.sender) public { }
+
   /**
    * Owner can allow crowdsale contracts to mint new tokens.
    */

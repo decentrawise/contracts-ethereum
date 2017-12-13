@@ -58,51 +58,49 @@ contract UpgradeableToken is StandardTokenExt {
    * Allow the token holder to upgrade some of their tokens to a new contract.
    */
   function upgrade(uint256 value) public {
+    UpgradeState state = getUpgradeState();
+    if(!(state == UpgradeState.ReadyToUpgrade || state == UpgradeState.Upgrading)) {
+      // Called in a bad state
+      throw;
+    }
 
-      UpgradeState state = getUpgradeState();
-      if(!(state == UpgradeState.ReadyToUpgrade || state == UpgradeState.Upgrading)) {
-        // Called in a bad state
-        throw;
-      }
+    // Validate input value.
+    if (value == 0) throw;
 
-      // Validate input value.
-      if (value == 0) throw;
+    balances[msg.sender] = balances[msg.sender].sub(value);
 
-      balances[msg.sender] = balances[msg.sender].sub(value);
+    // Take tokens out from circulation
+    totalSupply = totalSupply.sub(value);
+    totalUpgraded = totalUpgraded.add(value);
 
-      // Take tokens out from circulation
-      totalSupply = totalSupply.sub(value);
-      totalUpgraded = totalUpgraded.add(value);
-
-      // Upgrade agent reissues the tokens
-      upgradeAgent.upgradeFrom(msg.sender, value);
-      Upgrade(msg.sender, upgradeAgent, value);
+    // Upgrade agent reissues the tokens
+    upgradeAgent.upgradeFrom(msg.sender, value);
+    Upgrade(msg.sender, upgradeAgent, value);
   }
 
   /**
    * Set an upgrade agent that handles
    */
   function setUpgradeAgent(address agent) external {
+    if(!canUpgrade()) {
+      // The token is not yet in a state that we could think upgrading
+      throw;
+    }
 
-      if(!canUpgrade()) {
-        // The token is not yet in a state that we could think upgrading
-        throw;
-      }
+    if (agent == 0x0) throw;
+    // Only a master can designate the next agent
+    if (msg.sender != upgradeMaster) throw;
+    // Upgrade has already begun for an agent
+    if (getUpgradeState() == UpgradeState.Upgrading) throw;
 
-      if (agent == 0x0) throw;
-      // Only a master can designate the next agent
-      if (msg.sender != upgradeMaster) throw;
-      // Upgrade has already begun for an agent
-      if (getUpgradeState() == UpgradeState.Upgrading) throw;
+    upgradeAgent = UpgradeAgent(agent);
 
-      upgradeAgent = UpgradeAgent(agent);
+    // Bad interface
+    if(!upgradeAgent.isUpgradeAgent()) throw;
+    // Make sure that token supplies match in source and target
+    if (upgradeAgent.originalSupply() != totalSupply) throw;
 
-      // Bad interface
-      if(!upgradeAgent.isUpgradeAgent()) throw;
-      // Make sure that token supplies match in source and target
-      if (upgradeAgent.originalSupply() != totalSupply) throw;
-
-      UpgradeAgentSet(upgradeAgent);
+    UpgradeAgentSet(upgradeAgent);
   }
 
   /**
@@ -121,16 +119,16 @@ contract UpgradeableToken is StandardTokenExt {
    * This allows us to set a new owner for the upgrade mechanism.
    */
   function setUpgradeMaster(address master) public {
-      if (master == 0x0) throw;
-      if (msg.sender != upgradeMaster) throw;
-      upgradeMaster = master;
+    if (master == 0x0) throw;
+    if (msg.sender != upgradeMaster) throw;
+    upgradeMaster = master;
   }
 
   /**
    * Child contract can enable to provide the condition when the upgrade can begun.
    */
   function canUpgrade() public constant returns(bool) {
-     return true;
+    return true;
   }
 
 }
