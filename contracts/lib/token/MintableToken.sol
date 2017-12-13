@@ -14,7 +14,7 @@ import '../ownership/Ownable.sol';
  * Based on code by TokenMarketNet: https://github.com/TokenMarketNet/ico/blob/master/contracts/MintableToken.sol
  */
 
-contract MintableToken is StandardToken, Ownable {
+contract MintableToken is UpgradeableToken, Ownable {
   event MintingAgentChanged(address indexed addr, bool state);
   event Mint(address indexed to, uint256 amount);
   event MintFinished();
