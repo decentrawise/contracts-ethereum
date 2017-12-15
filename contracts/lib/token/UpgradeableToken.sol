@@ -4,7 +4,7 @@
  * Licensed under the Apache License, version 2.0: https://github.com/TokenMarketNet/ico/blob/master/LICENSE.txt
  */
 
-pragma solidity ^0.4.8;
+pragma solidity ^0.4.11;
 
 import "./ERC20.sol";
 import "./StandardTokenExt.sol";
@@ -50,7 +50,7 @@ contract UpgradeableToken is StandardTokenExt {
   /**
    * Do not allow construction without upgrade master set.
    */
-  function UpgradeableToken(address _upgradeMaster) {
+  function UpgradeableToken(address _upgradeMaster) public {
     upgradeMaster = _upgradeMaster;
   }
 
@@ -59,13 +59,8 @@ contract UpgradeableToken is StandardTokenExt {
    */
   function upgrade(uint256 value) public {
     UpgradeState state = getUpgradeState();
-    if(!(state == UpgradeState.ReadyToUpgrade || state == UpgradeState.Upgrading)) {
-      // Called in a bad state
-      throw;
-    }
-
-    // Validate input value.
-    if (value == 0) throw;
+    require(state == UpgradeState.ReadyToUpgrade || state == UpgradeState.Upgrading);
+    require(value > 0);
 
     balances[msg.sender] = balances[msg.sender].sub(value);
 
@@ -82,23 +77,21 @@ contract UpgradeableToken is StandardTokenExt {
    * Set an upgrade agent that handles
    */
   function setUpgradeAgent(address agent) external {
-    if(!canUpgrade()) {
-      // The token is not yet in a state that we could think upgrading
-      throw;
-    }
+    bool ok = canUpgrade();
+    UpgradeState state = getUpgradeState();
+    require(ok);
+    require(agent != address(0x0));
+    require(msg.sender == upgradeMaster);
+    require(state != UpgradeState.Upgrading);
 
-    if (agent == 0x0) throw;
-    // Only a master can designate the next agent
-    if (msg.sender != upgradeMaster) throw;
-    // Upgrade has already begun for an agent
-    if (getUpgradeState() == UpgradeState.Upgrading) throw;
+    UpgradeAgent nextAgent = UpgradeAgent(agent);
 
-    upgradeAgent = UpgradeAgent(agent);
+    bool isAgent = nextAgent.isUpgradeAgent();
+    uint256 origSupply = nextAgent.originalSupply();
+    require(isAgent);
+    require(origSupply == totalSupply);
 
-    // Bad interface
-    if(!upgradeAgent.isUpgradeAgent()) throw;
-    // Make sure that token supplies match in source and target
-    if (upgradeAgent.originalSupply() != totalSupply) throw;
+    upgradeAgent = nextAgent;
 
     UpgradeAgentSet(upgradeAgent);
   }
@@ -119,15 +112,16 @@ contract UpgradeableToken is StandardTokenExt {
    * This allows us to set a new owner for the upgrade mechanism.
    */
   function setUpgradeMaster(address master) public {
-    if (master == 0x0) throw;
-    if (msg.sender != upgradeMaster) throw;
+    require(master != address(0x0));
+    require(msg.sender == upgradeMaster);
+
     upgradeMaster = master;
   }
 
   /**
-   * Child contract can enable to provide the condition when the upgrade can begun.
+   * Child contract can enable to provide the condition when the upgrade can begin.
    */
-  function canUpgrade() public constant returns(bool) {
+  function canUpgrade() public view returns(bool) {
     return true;
   }
 

@@ -12,12 +12,40 @@ contract PreSale is TokenCappedCrowdsale, Ownable {
 
   event Finalized();
 
+  /**
+   * event for premium token purchase logging
+   * @param purchaser who paid for the tokens
+   * @param beneficiary who got the tokens
+   * @param value weis paid for purchase
+   * @param amount amount of tokens purchased
+   */
+  event PremiumPurchase(address indexed purchaser, address indexed beneficiary, uint256 value, uint256 amount);
 
-  function PreSale(address _tokenAddress, uint256 _cap, uint256 _startTime, uint256 _endTime, uint256 _rate, address _wallet)
-    TokenCappedCrowdsale(_cap)
+
+  function PreSale(address _tokenAddress, uint256 _cap, uint256 _weiMin, uint256 _weiMax, uint256 _startTime, uint256 _endTime, uint256 _rate, address _wallet)
+    TokenCappedCrowdsale(_cap, _weiMin, _weiMax)
     Crowdsale(_startTime, _endTime, _rate, _wallet) {
 
     token = MN8(_tokenAddress);
+  }
+
+  // Premium token purchase function
+  function purchasePremium(address beneficiary) public payable {
+    require(beneficiary != address(0));
+    require(validPremiumPurchase());
+
+    uint256 weiAmount = msg.value;
+
+    // calculate token amount to be created
+    uint256 tokens = weiAmount.mul(rate);
+
+    // update state
+    weiRaised = weiRaised.add(weiAmount);
+
+    token.mint(beneficiary, tokens);
+    PremiumPurchase(msg.sender, beneficiary, weiAmount, tokens);
+
+    forwardFunds();
   }
 
   // Update token address

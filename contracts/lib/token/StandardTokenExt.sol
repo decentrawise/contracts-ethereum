@@ -18,7 +18,7 @@ import "./StandardToken.sol";
 contract StandardTokenExt is StandardToken {
 
   /* Interface declaration */
-  function isToken() public constant returns (bool weAre) {
+  function isToken() public pure returns (bool weAre) {
     return true;
   }
 }

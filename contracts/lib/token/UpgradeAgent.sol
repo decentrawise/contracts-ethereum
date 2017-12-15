@@ -4,7 +4,7 @@
  * Licensed under the Apache License, version 2.0: https://github.com/TokenMarketNet/ico/blob/master/LICENSE.txt
  */
 
-pragma solidity ^0.4.6;
+pragma solidity ^0.4.11;
 
 /**
  * Upgrade agent interface inspired by Lunyr.
@@ -14,10 +14,10 @@ pragma solidity ^0.4.6;
  */
 contract UpgradeAgent {
 
-  uint public originalSupply;
+  uint256 public originalSupply;
 
   /** Interface marker */
-  function isUpgradeAgent() public constant returns (bool) {
+  function isUpgradeAgent() public pure returns (bool) {
     return true;
   }
 

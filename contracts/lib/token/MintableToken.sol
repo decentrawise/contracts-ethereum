@@ -3,6 +3,7 @@ pragma solidity ^0.4.11;
 
 /*import './StandardToken.sol';*/
 import './UpgradeableToken.sol';
+import './LimitedTransferToken.sol';
 import '../ownership/Ownable.sol';
 
 
@@ -14,7 +15,7 @@ import '../ownership/Ownable.sol';
  * Based on code by TokenMarketNet: https://github.com/TokenMarketNet/ico/blob/master/contracts/MintableToken.sol
  */
 
-contract MintableToken is UpgradeableToken, Ownable {
+contract MintableToken is UpgradeableToken, LimitedTransferToken, Ownable {
   event MintingAgentChanged(address indexed addr, bool state);
   event Mint(address indexed to, uint256 amount);
   event MintFinished();
@@ -68,4 +69,18 @@ contract MintableToken is UpgradeableToken, Ownable {
     MintFinished();
     return true;
   }
+
+  // overriding UpgradeableToken#canUpgrade to define when to upgrade logic
+  // @return true if token can be upgraded at the moment
+  function canUpgrade() public view returns(bool) {
+    return mintingFinished;
+  }
+
+  // overriding LimitedTransferToken#transferableTokens to only allow transfer after minting is finished
+  // @dev Overwriting transferableTokens(address holder, uint64 time) is the way to provide the
+  // specific logic for limiting token transferability for a holder over time.
+  function transferableTokens(address holder, uint64 time) constant public returns (uint256) {
+    return (mintingFinished ? balanceOf(holder) : 0);
+  }
+
 }
