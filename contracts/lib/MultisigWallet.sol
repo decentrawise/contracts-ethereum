@@ -20,26 +20,34 @@ contract MultisigWallet is Multisig, Shareable, DayLimit {
     bytes data;
   }
 
+  // Limit up to a single owner can perform transactions
+  uint256 public singleLimit;
+
   /**
    * Constructor, sets the owners addresses, number of approvals required, and daily spending limit
    * @param _owners A list of owners.
    * @param _required The amount required for a transaction to be approved.
+   * @param _singleLimit Limit up to a single owner can perform transactions.
+   * @param _dayLimit The daily limit for non full consent transactions.
    */
-  function MultisigWallet(address[] _owners, uint256 _required, uint256 _daylimit)
+  function MultisigWallet(address[] _owners, uint256 _required, uint256 _singleLimit, uint256 _dayLimit)
     Shareable(_owners, _required)
-    DayLimit(_daylimit) { }
+    DayLimit(_dayLimit) public {
+
+    singleLimit = _singleLimit;
+  }
 
   /**
    * @dev destroys the contract sending everything to `_to`.
    */
-  function destroy(address _to) onlymanyowners(keccak256(msg.data)) external {
+  function destroy(address _to) onlyAllOwners(keccak256(msg.data)) external {
     selfdestruct(_to);
   }
 
   /**
    * @dev Fallback function, receives value and emits a deposit event.
    */
-  function() payable {
+  function() public payable {
     // just being sent some cash?
     if (msg.value > 0)
       Deposit(msg.sender, msg.value);
@@ -56,10 +64,11 @@ contract MultisigWallet is Multisig, Shareable, DayLimit {
    * @param _data The data part of the transaction
    */
   function execute(address _to, uint256 _value, bytes _data) external onlyOwner returns (bytes32 _r) {
-    // first, take the opportunity to check that we're under the daily limit.
-    if (underLimit(_value)) {
+    bool inDailyLimit = underLimit(_value);
+    // first, check if we're under single limit
+    if(_value <= singleLimit && inDailyLimit) {
       SingleTransact(msg.sender, _value, _to, _data);
-      // yes - just execute the call.
+      // yes - just execute the call
       if (!_to.call.value(_value)(_data)) {
         revert();
       }
@@ -67,11 +76,22 @@ contract MultisigWallet is Multisig, Shareable, DayLimit {
     }
     // determine our operation hash.
     _r = keccak256(msg.data, block.number);
-    if (!confirm(_r) && txs[_r].to == 0) {
-      txs[_r].to = _to;
-      txs[_r].value = _value;
-      txs[_r].data = _data;
-      ConfirmationNeeded(_r, msg.sender, _value, _to, _data);
+    // next, check that we're under the daily limit
+    if(inDailyLimit) {
+      if(!confirm(_r) && txs[_r].to == 0) {
+        txs[_r].to = _to;
+        txs[_r].value = _value;
+        txs[_r].data = _data;
+        ConfirmNeeded(_r, msg.sender, _value, _to, _data);
+      }
+      return 0;
+    }
+    // else - full consent needed
+    if(!consent(_r) && txsF[_r].to == 0) {
+      txsF[_r].to = _to;
+      txsF[_r].value = _value;
+      txsF[_r].data = _data;
+      ConsentNeeded(_r, msg.sender, _value, _to, _data);
     }
   }
 
@@ -80,7 +100,7 @@ contract MultisigWallet is Multisig, Shareable, DayLimit {
    * txs, in order to determine the body of the transaction from the hash provided.
    * @param _h The transaction hash to approve.
    */
-  function confirm(bytes32 _h) onlymanyowners(_h) returns (bool) {
+  function confirm(bytes32 _h) onlyManyOwners(_h) public returns (bool) {
     if (txs[_h].to != 0) {
       assert(txs[_h].to.call.value(txs[_h].value)(txs[_h].data));
       MultiTransact(msg.sender, _h, txs[_h].value, txs[_h].to, txs[_h].data);
@@ -90,17 +110,39 @@ contract MultisigWallet is Multisig, Shareable, DayLimit {
   }
 
   /**
+   * @dev Full consent a transaction by providing just the hash. We use the previous transactions map,
+   * txs, in order to determine the body of the transaction from the hash provided.
+   * @param _h The transaction hash to approve.
+   */
+  function consent(bytes32 _h) onlyAllOwners(_h) public returns (bool) {
+    if (txsF[_h].to != 0) {
+      assert(txsF[_h].to.call.value(txsF[_h].value)(txsF[_h].data));
+      ConsentTransact(msg.sender, _h, txsF[_h].value, txsF[_h].to, txsF[_h].data);
+      delete txsF[_h];
+      return true;
+    }
+  }
+
+  /**
    * @dev Updates the daily limit value.
    * @param _newLimit  uint256 to represent the new limit.
    */
-  function setDailyLimit(uint256 _newLimit) onlymanyowners(keccak256(msg.data)) external {
+  function setSingleLimit(uint256 _newLimit) onlyAllOwners(keccak256(msg.data)) external {
+    singleLimit = _newLimit;
+  }
+
+  /**
+   * @dev Updates the daily limit value.
+   * @param _newLimit  uint256 to represent the new limit.
+   */
+  function setDailyLimit(uint256 _newLimit) onlyAllOwners(keccak256(msg.data)) external {
     _setDailyLimit(_newLimit);
   }
 
   /**
    * @dev Resets the value spent to enable more spending
    */
-  function resetSpentToday() onlymanyowners(keccak256(msg.data)) external {
+  function resetSpentToday() onlyAllOwners(keccak256(msg.data)) external {
     _resetSpentToday();
   }
 
@@ -120,6 +162,8 @@ contract MultisigWallet is Multisig, Shareable, DayLimit {
 
   // FIELDS
 
-  // pending transactions we have at present.
+  // pending multi-sig transactions we have at present.
   mapping (bytes32 => Transaction) txs;
+  // pending full consent transactions we have at present.
+  mapping (bytes32 => Transaction) txsF;
 }

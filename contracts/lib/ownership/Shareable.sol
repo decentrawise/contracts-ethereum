@@ -41,12 +41,23 @@ contract Shareable {
   }
 
   /**
-   * @dev Modifier for multisig functions.
+   * @dev Modifier for multisig functions. Requires many confirmations.
    * @param _operation The operation must have an intrinsic hash in order that later attempts can be
    * realised as the same underlying operation and thus count as confirmations.
    */
-  modifier onlymanyowners(bytes32 _operation) {
+  modifier onlyManyOwners(bytes32 _operation) {
     if (confirmAndCheck(_operation)) {
+      _;
+    }
+  }
+
+  /**
+   * @dev Modifier for multisig functions. Requires all confirmations.
+   * @param _operation The operation must have an intrinsic hash in order that later attempts can be
+   * realised as the same underlying operation and thus count as confirmations.
+   */
+  modifier onlyAllOwners(bytes32 _operation) {
+    if (confirmAndCheckAll(_operation)) {
       _;
     }
   }
@@ -57,7 +68,7 @@ contract Shareable {
    * @param _owners A list of owners.
    * @param _required The amount required for a transaction to be approved.
    */
-  function Shareable(address[] _owners, uint256 _required) {
+  function Shareable(address[] _owners, uint256 _required) public {
     owners[1] = msg.sender;
     ownerIndex[msg.sender] = 1;
     for (uint256 i = 0; i < _owners.length; ++i) {
@@ -89,11 +100,11 @@ contract Shareable {
 
   /**
    * @dev Gets an owner by 0-indexed position (using numOwners as the count)
-   * @param ownerIndex uint256 The index of the owner
+   * @param _ownerIndex uint256 The index of the owner
    * @return The address of the owner
    */
-  function getOwner(uint256 ownerIndex) external constant returns (address) {
-    return address(owners[ownerIndex + 1]);
+  function getOwner(uint256 _ownerIndex) external constant returns (address) {
+    return address(owners[_ownerIndex + 1]);
   }
 
   /**
@@ -101,17 +112,17 @@ contract Shareable {
    * @param _addr address The address which you want to check.
    * @return True if the address is an owner and fase otherwise.
    */
-  function isOwner(address _addr) constant returns (bool) {
+  function isOwner(address _addr) constant public returns (bool) {
     return ownerIndex[_addr] > 0;
   }
 
   /**
-   * @dev Function to check is specific owner has already confirme the operation.
+   * @dev Function to check if specific owner has already confirme the operation.
    * @param _operation The operation identifier.
    * @param _owner The owner address.
    * @return True if the owner has confirmed and false otherwise.
    */
-  function hasConfirmed(bytes32 _operation, address _owner) constant returns (bool) {
+  function hasConfirmed(bytes32 _operation, address _owner) constant public returns (bool) {
     var pending = pendings[_operation];
     uint256 index = ownerIndex[_owner];
 
@@ -126,11 +137,30 @@ contract Shareable {
   }
 
   /**
-   * @dev Confirm and operation and checks if it's already executable.
+   * @dev Confirm the operation and checks if it's already executable.
    * @param _operation The operation identifier.
    * @return Returns true when operation can be executed.
    */
   function confirmAndCheck(bytes32 _operation) internal returns (bool) {
+    return confirmAndCheckRequired(_operation, required);
+  }
+
+  /**
+   * @dev Confirm the operation and checks if it's already executable.
+   * @param _operation The operation identifier.
+   * @return Returns true when operation can be executed.
+   */
+  function confirmAndCheckAll(bytes32 _operation) internal returns (bool) {
+    return confirmAndCheckRequired(_operation, owners.length);
+  }
+
+  /**
+   * @dev Confirm the operation and checks if it's already executable.
+   * @param _operation The operation identifier.
+   * @param _required The the number of required owner confirmations.
+   * @return Returns true when operation can be executed.
+   */
+  function confirmAndCheckRequired(bytes32 _operation, uint256 _required) internal returns (bool) {
     // determine what index the present sender is:
     uint256 index = ownerIndex[msg.sender];
     // make sure they're an owner
@@ -140,7 +170,7 @@ contract Shareable {
     // if we're not yet working on this operation, switch over and reset the confirmation status.
     if (pending.yetNeeded == 0) {
       // reset count of confirmations needed.
-      pending.yetNeeded = required;
+      pending.yetNeeded = _required;
       // reset which owners have confirmed (none) - set our bitmap to 0.
       pending.ownersDone = 0;
       pending.index = pendingsIndex.length++;
@@ -165,7 +195,6 @@ contract Shareable {
     }
     return false;
   }
-
 
   /**
    * @dev Clear the pending list.

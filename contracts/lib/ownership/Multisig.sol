@@ -15,14 +15,19 @@ contract Multisig {
   event SingleTransact(address owner, uint256 value, address to, bytes data);
   // Multi-sig transaction going out of the wallet (record who signed for it last, the operation hash, how much, and to whom it's going).
   event MultiTransact(address owner, bytes32 operation, uint256 value, address to, bytes data);
+  // Multi-sig full consent transaction going out of the wallet (record who signed for it last, the operation hash, how much, and to whom it's going).
+  event ConsentTransact(address owner, bytes32 operation, uint256 value, address to, bytes data);
   // Confirmation still needed for a transaction.
-  event ConfirmationNeeded(bytes32 operation, address initiator, uint256 value, address to, bytes data);
+  event ConfirmNeeded(bytes32 operation, address initiator, uint256 value, address to, bytes data);
+  // Full consent still needed for a transaction.
+  event ConsentNeeded(bytes32 operation, address initiator, uint256 value, address to, bytes data);
 
 
   // FUNCTIONS
 
   // TODO: document
-  function changeOwner(address _from, address _to) external;
+  //function changeOwner(address _from, address _to) external;
   function execute(address _to, uint256 _value, bytes _data) external returns (bytes32);
-  function confirm(bytes32 _h) returns (bool);
+  function confirm(bytes32 _h) public returns (bool);
+  function consent(bytes32 _h) public returns (bool);
 }
