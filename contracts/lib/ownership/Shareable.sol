@@ -16,6 +16,9 @@ contract Shareable {
     uint256 index;
   }
 
+  // the total number of owners that must confirm a full consent operation
+  uint256 public numOwners;
+
   // the number of owners that must confirm the same operation before it is run.
   uint256 public required;
 
@@ -69,6 +72,9 @@ contract Shareable {
    * @param _required The amount required for a transaction to be approved.
    */
   function Shareable(address[] _owners, uint256 _required) public {
+    numOwners = _owners.length;
+    require(numOwners <= owners.length);
+    require(required <= numOwners);
     owners[1] = msg.sender;
     ownerIndex[msg.sender] = 1;
     for (uint256 i = 0; i < _owners.length; ++i) {
@@ -76,7 +82,6 @@ contract Shareable {
       ownerIndex[_owners[i]] = 2 + i;
     }
     required = _required;
-    require(required <= owners.length);
   }
 
   /**
@@ -146,12 +151,12 @@ contract Shareable {
   }
 
   /**
-   * @dev Confirm the operation and checks if it's already executable.
+   * @dev Confirm the operation and checks if it's already executable with full consent.
    * @param _operation The operation identifier.
    * @return Returns true when operation can be executed.
    */
   function confirmAndCheckAll(bytes32 _operation) internal returns (bool) {
-    return confirmAndCheckRequired(_operation, owners.length);
+    return confirmAndCheckRequired(_operation, numOwners);
   }
 
   /**
