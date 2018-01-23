@@ -8,44 +8,49 @@ import './lib/math/SafeMath.sol';
 contract PreSale is TokenCappedCrowdsale, Ownable {
   using SafeMath for uint256;
 
+  uint256 public weiKYCthreshold;
+
   bool public isFinalized = false;
 
   event Finalized();
 
   /**
-   * event for premium token purchase logging
+   * event for KYC token purchase logging
    * @param purchaser who paid for the tokens
    * @param beneficiary who got the tokens
    * @param value weis paid for purchase
-   * @param amount amount of tokens purchased
+   * @param kycCode the code used to validate the purchase for KYC
    */
-  event PremiumPurchase(address indexed purchaser, address indexed beneficiary, uint256 value, uint256 amount);
+  event KYCPurchase(address indexed purchaser, address indexed beneficiary, uint256 value, bytes32 kycCode);
 
 
-  function PreSale(address _tokenAddress, uint256 _cap, uint256 _weiMin, uint256 _weiMax, uint256 _startTime, uint256 _endTime, uint256 _rate, address _wallet)
+  function PreSale(address _tokenAddress, uint256 _cap, uint256 _weiMin, uint256 _weiMax, uint256 _weiKYCthreshold, uint256 _startTime, uint256 _endTime, uint256 _rate, address _wallet)
     TokenCappedCrowdsale(_cap, _weiMin, _weiMax)
     Crowdsale(_startTime, _endTime, _rate, _wallet) {
 
     token = MN8(_tokenAddress);
+
+    weiKYCthreshold = _weiKYCthreshold;
   }
 
-  // Premium token purchase function
-  function purchasePremium(address beneficiary) public payable {
-    require(beneficiary != address(0));
-    require(validPremiumPurchase());
+  // Token purchase function with KYC verification
+  function buyTokensKYC(address _beneficiary, bytes32 _kycCode) public payable {
+    bytes32 hash = keccak256('MN8', msg.sender);
+    require(_kycCode == hash);
 
+    KYCPurchase(msg.sender, _beneficiary, msg.value, _kycCode);
+
+    super.buyTokens(_beneficiary);
+  }
+
+  // overriding Crowdsale#buyTokens to add extra KYC verification logic
+  // low level token purchase function, called by fallback function
+  function buyTokens(address _beneficiary) public payable {
     uint256 weiAmount = msg.value;
 
-    // calculate token amount to be created
-    uint256 tokens = weiAmount.mul(rate);
+    require(weiAmount <= weiKYCthreshold);
 
-    // update state
-    weiRaised = weiRaised.add(weiAmount);
-
-    token.mint(beneficiary, tokens);
-    PremiumPurchase(msg.sender, beneficiary, weiAmount, tokens);
-
-    forwardFunds();
+    super.buyTokens(_beneficiary);
   }
 
   // Update token address

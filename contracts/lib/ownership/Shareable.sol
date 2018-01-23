@@ -72,7 +72,7 @@ contract Shareable {
    * @param _required The amount required for a transaction to be approved.
    */
   function Shareable(address[] _owners, uint256 _required) public {
-    numOwners = _owners.length;
+    numOwners = _owners.length + 1;
     require(numOwners <= owners.length);
     require(required <= numOwners);
     owners[1] = msg.sender;

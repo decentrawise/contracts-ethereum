@@ -25,17 +25,6 @@ contract TokenCappedCrowdsale is Crowdsale {
     weiMax = _weiMax;
   }
 
-  // @return true if premium investors can buy at the moment
-  function validPremiumPurchase() internal constant returns (bool) {
-    uint256 supply = token.totalSupply();
-    uint256 weiAmount = msg.value;
-    uint256 tokens = weiAmount.mul(rate);
-
-    bool withinCap = (supply.add(tokens) <= cap);
-
-    return super.validPurchase() && withinCap;
-  }
-
   // overriding Crowdsale#validPurchase to add extra cap logic
   // @return true if investors can buy at the moment
   function validPurchase() internal constant returns (bool) {
