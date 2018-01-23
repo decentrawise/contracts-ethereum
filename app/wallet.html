@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Emanate - Blockchain Music Production</title>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+  <link href="./css/app.css" rel='stylesheet' type='text/css'>
+  <script src="./js/web3.min.js"></script>
+  <script src="./js/mn8.js"></script>
+  <script src="./js/wallet.js"></script>
+</head>
+<body>
+  <h1>Emanate</h1>&nbsp;
+  <h2>Wallet</h2>
+  <h3>
+    Balance is <span class="black"><span id="balance-eth">0.0000</span> ETH</span> and the supply is <span class="black"><span id="balance-mn8">0.0000</span> MN8</span><br>
+    <span class="smaller">Wallet address <span class="black"><span id="address"></span></span></span><br>
+    <span class="smaller">MN8 address <span class="black"><span id="mn8-address"></span></span></span>
+  </h3>
+  <p><span id="network"></span></p>
+  <div class="status">
+    <strong>Status</strong><br>
+    <span id="status">Ready</span>
+  </div>
+  <h4>Withdraw funds</h4>
+  <form onsubmit="event.preventDefault();">
+    <input type="text" id="wf-recipient" placeholder="Recipient address"></input><br>
+    <input type="text" id="wf-data" placeholder="Transaction data (optional)"></input><br>
+    <input type="number" id="wf-amount" placeholder="ETH amount"></input>
+    <button id="wf-send">Withdraw</button><br>
+    <span id="wf-result"></span>
+  </form>
+  <h4>Confirm transaction</h4>
+  <form onsubmit="event.preventDefault();">
+    <input type="text" id="ct-operation" placeholder="Operation code"></input>
+    <button id="ct-send">Confirm</button><br>
+    <span id="ct-result"></span>
+  </form>
+  <h4>Full consent transaction</h4>
+  <form onsubmit="event.preventDefault();">
+    <input type="text" id="fct-operation" placeholder="Operation code"></input>
+    <button id="fct-send">Consent</button><br>
+    <span id="fct-result"></span>
+  </form>
+  <h4>Transaction history</h4>
+  <table id="history" class="history">
+    <tr>
+      <th>Timestamp<br><span class="unit">(UTC)</span></th><th>Type<br>&nbsp;</th><th>Details<br>&nbsp;</th><th>Amount<br><span class="unit">(ETH)</span></th>
+    </tr>
+  </table>
+</body>
+</html>

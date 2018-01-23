@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Emanate - Blockchain Music Production</title>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+  <link href="./css/app.css" rel='stylesheet' type='text/css'>
+  <script src="./js/web3.min.js"></script>
+  <script src="./js/mn8.js"></script>
+  <script src="./js/buy.js"></script>
+</head>
+<body>
+  <h1>Emanate</h1>&nbsp;
+  <h2>Buy MN8</h2>
+  <h3>
+    You have <span class="black"><span id="balance-eth">0.0000</span> ETH</span> and <span class="black"><span id="balance-mn8">0.0000</span> MN8</span><span id="thanks" class="hidden"> - Thank you!</span><br>
+    <span class="smaller">Selected account <span class="black"><span id="account"></span></span></span>
+  </h3>
+  <p><span id="network"></span></p>
+  <h4>Invest in MN8 token sale</h4>
+  <p><span id="instructions">You are using a Web3 enabled wallet. Please use the form below to participate in the token sale...</span></p>
+  <br>
+  <form onsubmit="event.preventDefault();">
+    <input type="text" id="amount" placeholder="ETH amount"></input>
+    <button id="send">Send</button>
+  </form>
+  <span id="status"></span>
+  <h4>Using an external wallet</h4>
+  <p>Without using browser integrated wallets, you can simply send your investment to the address below and you will receive your MN8 tokens in your sending account.</p>
+  <div class="crowdsale"><span id="sale-account"></span></div>
+  <p><span class="warning">Please DO NOT use Exchange accounts or any other accounts where you don't control your private keys to participate!</span> You might loose your tokens and we cannot recover them for you...</p>
+  <h4>Get Whitelisting HASH code</h4>
+  <p>To allow KYC and AML processes to validate investors that want to buy more than <span id="limit">0.0000</span> ETH, the user will need to send the hash code below to contract function buyTokensKYC() to get his transaction validated...</p>
+  <form onsubmit="event.preventDefault();">
+    <input type="text" id="address" placeholder="Investor account"></input>
+    <button id="get">Get</button>
+  </form>
+  <p></p>
+  <div class="premium"><span id="hash">...</span></div>
+</body>
+</html>
